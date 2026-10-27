@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a0d14">
+<title>Coreleash Draught · Clase XXXXX</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=IM+Fell+English+SC&family=IM+Fell+English:ital@0;1&family=Reenie+Beanie&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#e8dfc9;
+  --ink:#2b2638;
+  --ink-soft:#4a4358;
+  --silver:#d5dde9;
+  --silver-deep:#8c9bb3;
+  --blood:#8e2f3b;
+  --hand:'Caveat','Segoe Script','Bradley Hand','Comic Sans MS',cursive;
+  --scribble:'Reenie Beanie','Caveat',cursive;
+  --print:'IM Fell English SC','IM Fell English',Georgia,serif;
+  --print-i:'IM Fell English',Georgia,serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden;background:#07090e}
+body{
+  font-family:var(--hand);
+  color:var(--ink);
+  background:radial-gradient(ellipse at 50% 20%, #182033 0%, #0b0f18 55%, #05070b 100%);
+  overscroll-behavior:none;
+  touch-action:manipulation;
+}
+
+/* ---------- Libro ---------- */
+.stage{
+  position:relative;
+  height:100vh;height:100dvh;
+  display:flex;flex-direction:column;align-items:center;
+  padding:max(14px,env(safe-area-inset-top)) 0 0;
+}
+.book{
+  position:relative;
+  width:min(94vw,470px);
+  flex:1 1 auto;
+  max-height:860px;
+  margin-bottom:84px;
+  perspective:1700px;
+}
+.page{
+  --fs:1;
+  position:absolute;inset:0;
+  border-radius:4px 12px 12px 4px;
+  overflow:hidden;
+  transform-origin:left center;
+  transform:rotateY(0deg);
+  transition:transform .8s cubic-bezier(.55,.08,.25,1), opacity .25s ease;
+  backface-visibility:hidden;
+  will-change:transform,opacity;
+  background-color:var(--paper);
+  background-image:
+    radial-gradient(ellipse at 18% 8%, rgba(255,255,255,.38), transparent 52%),
+    radial-gradient(ellipse at 85% 92%, rgba(95,70,35,.28), transparent 58%),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .36  0 0 0 0 .28  0 0 0 0 .17  0 0 0 .26 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  box-shadow:
+    inset 20px 0 24px -16px rgba(0,0,0,.5),
+    inset -2px 0 0 rgba(120,100,60,.25),
+    0 8px 20px rgba(0,0,0,.5),
+    5px 0 0 #cfc5ad;
+}
+.page.turned{
+  transform:rotateY(-118deg);
+  opacity:0;
+  pointer-events:none;
+  transition:transform .8s cubic-bezier(.55,.08,.25,1), opacity .35s ease .4s;
+}
+.page.far{visibility:hidden}
+
+/* niebla propia de cada página */
+.page::before,.page::after{
+  content:"";position:absolute;inset:-12%;pointer-events:none;z-index:1;
+  will-change:transform;
+}
+.page:not(.active)::before,.page:not(.active)::after{animation-play-state:paused}
+.page::before{
+  background:
+    radial-gradient(ellipse 60% 26% at 20% 82%, rgba(110,130,165,.34), transparent 70%),
+    radial-gradient(ellipse 48% 22% at 84% 28%, rgba(140,155,185,.28), transparent 70%);
+  animation:driftA 16s ease-in-out infinite alternate;
+}
+.page::after{
+  background:
+    radial-gradient(ellipse 70% 30% at 55% 58%, rgba(125,145,178,.2), transparent 70%),
+    radial-gradient(ellipse 40% 20% at 10% 20%, rgba(160,172,198,.25), transparent 70%);
+  animation:driftB 22s ease-in-out infinite alternate;
+}
+@keyframes driftA{from{transform:translate3d(-6%,2%,0)}to{transform:translate3d(7%,-4%,0)}}
+@keyframes driftB{from{transform:translate3d(6%,-3%,0)}to{transform:translate3d(-8%,4%,0)}}
+
+.scroll{
+  position:relative;z-index:2;height:100%;overflow-y:auto;overflow-x:hidden;
+  padding:30px 24px 50px 32px;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+}
+.scroll::-webkit-scrollbar{display:none}
+
+.folio{
+  position:absolute;z-index:3;left:0;right:0;bottom:14px;text-align:center;
+  font-family:var(--print-i);font-size:.85rem;color:var(--ink-soft);opacity:.75;letter-spacing:.12em;
+  pointer-events:none;
+}
+
+/* ---------- Tipografía (escala con --fs para que todo entre sin scroll) ---------- */
+.kicker{
+  font-family:var(--print);font-size:.88rem;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--ink-soft);margin:0 0 4px;
+  border-bottom:1px solid rgba(60,50,80,.28);padding-bottom:7px;display:inline-block;
+}
+h2{
+  font-family:var(--hand);font-weight:700;font-size:calc(2rem * var(--fs));line-height:1.05;
+  margin:10px 0 18px;color:#1f1b2b;
+  text-shadow:0 0 1px rgba(30,25,45,.4);
+}
+p,li{font-size:calc(1.32rem * var(--fs));line-height:1.3;margin:0 0 12px;color:var(--ink)}
+p{text-shadow:0 0 .6px rgba(30,25,45,.45)}
+em{color:#3a3350}
+strong{font-weight:700;color:#1f1b2b}
+
+.quote{
+  margin:16px 0 18px;padding:4px 0 4px 16px;
+  border-left:2px solid var(--silver-deep);
+}
+.quote p{font-style:italic;color:#2f4062;font-size:calc(1.4rem * var(--fs));margin-bottom:6px;text-shadow:0 0 6px rgba(150,170,205,.55)}
+.quote cite{
+  display:block;font-style:normal;font-family:var(--scribble);font-size:calc(1.3rem * var(--fs));color:#7a3340;
+  transform:rotate(-1.5deg);transform-origin:left;
+}
+.margin-note{
+  font-family:var(--scribble);font-size:calc(1.55rem * var(--fs));line-height:1.05;color:#7a3340;
+  transform:rotate(-2deg);margin:14px 0 4px;
+}
+
+.stage-item{display:flex;gap:12px;margin:0 0 12px;align-items:flex-start}
+.stage-item .num{
+  flex:0 0 36px;height:36px;border:1.5px solid var(--silver-deep);border-radius:50%;
+  display:grid;place-items:center;font-family:var(--print);font-size:.95rem;color:#3d4f72;
+  background:rgba(213,221,233,.55);margin-top:3px;
+  box-shadow:0 0 10px rgba(150,170,205,.55);
+}
+.stage-item p{margin:0}
+
+ul.effects,ol.uses{list-style:none;margin:6px 0 8px;padding:0}
+ul.effects li{position:relative;padding-left:28px;margin-bottom:14px}
+ul.effects li::before{
+  content:"";position:absolute;left:4px;top:.6em;width:11px;height:11px;border-radius:50% 50% 50% 0;
+  transform:rotate(-45deg);background:radial-gradient(circle at 35% 35%,#fff,#aebbd1 60%,#6e7f9e);
+  box-shadow:0 0 8px rgba(140,160,200,.9);
+}
+ol.uses{counter-reset:u}
+ol.uses li{counter-increment:u;position:relative;padding-left:38px;margin-bottom:16px}
+ol.uses li::before{
+  content:counter(u);position:absolute;left:0;top:-2px;font-family:var(--print);font-size:calc(1.7rem * var(--fs));color:#3d4f72;
+  text-shadow:0 0 8px rgba(150,170,205,.8);
+}
+
+/* ---------- Tachado ---------- */
+.hint{font-family:var(--print-i);font-size:.9rem;color:var(--ink-soft);margin:18px 0 8px;font-style:italic}
+.redacted{
+  all:unset;display:block;position:relative;cursor:pointer;
+  padding:16px 14px;margin:6px 0 10px;border-radius:3px;
+  font-family:var(--hand);font-size:calc(1.5rem * var(--fs));line-height:1.3;color:#2a3d63;
+  text-shadow:0 0 10px rgba(150,175,215,.9);
+  background:rgba(213,221,233,.25);
+}
+.redacted:focus-visible{outline:2px dashed var(--silver-deep);outline-offset:3px}
+.redacted .ink{
+  position:absolute;inset:0;border-radius:3px;
+  background:repeating-linear-gradient(176deg,#13101a 0 9px,#251f31 9px 11px,#0d0b13 11px 15px);
+  clip-path:polygon(0 6%,3% 0,12% 4%,24% 0,37% 5%,52% 0,66% 4%,80% 0,92% 5%,100% 1%,100% 94%,95% 100%,82% 95%,68% 100%,53% 96%,38% 100%,22% 95%,9% 100%,0 96%);
+  transition:opacity 1s ease, transform 1.2s ease;
+}
+.redacted .ink::after{
+  content:"· · ·  toca para revelar  · · ·";position:absolute;inset:0;display:grid;place-items:center;
+  font-family:var(--print-i);font-size:.85rem;color:rgba(213,221,233,.55);letter-spacing:.12em;
+}
+.redacted.open .ink{opacity:0;transform:translateY(-8px) scaleY(1.25)}
+.redacted .reveal-text{display:block;opacity:0;transition:opacity 1.2s ease .3s}
+.redacted.open .reveal-text{opacity:1}
+
+/* ---------- Sello ---------- */
+.stamp{
+  display:inline-block;font-family:var(--print);letter-spacing:.2em;text-transform:uppercase;
+  color:var(--blood);border:3px double var(--blood);padding:8px 14px;border-radius:4px;
+  transform:rotate(-7deg);opacity:.86;font-size:1.05rem;
+}
+.end{text-align:center;margin-top:34px}
+.end small{display:block;margin-top:20px;font-family:var(--print-i);font-style:italic;color:var(--ink-soft);font-size:.95rem}
+
+/* ---------- Portada ---------- */
+.page.cover{
+  background-color:#0d111a;
+  background-image:
+    radial-gradient(ellipse at 50% 30%, rgba(70,90,130,.35), transparent 60%),
+    radial-gradient(ellipse at 50% 110%, rgba(20,25,40,1), transparent 60%),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .6  0 0 0 0 .66  0 0 0 0 .8  0 0 0 .12 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  box-shadow:
+    inset 0 0 0 1px rgba(190,205,230,.18),
+    inset 20px 0 26px -14px rgba(0,0,0,.7),
+    0 8px 20px rgba(0,0,0,.6);
+}
+.cover::before{
+  background:
+    radial-gradient(ellipse 70% 28% at 25% 80%, rgba(170,190,225,.35), transparent 70%),
+    radial-gradient(ellipse 55% 24% at 80% 35%, rgba(190,205,235,.25), transparent 70%);
+}
+.cover::after{
+  background:radial-gradient(ellipse 80% 30% at 50% 60%, rgba(170,190,225,.22), transparent 70%);
+}
+.cover .scroll{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
+  padding:40px 26px 40px 34px;
+}
+.cover .frame{
+  position:absolute;inset:16px 14px 16px 22px;border:1px solid rgba(190,205,230,.3);border-radius:3px;pointer-events:none;z-index:2;
+}
+.cover .stamp{
+  color:#c85a68;border-color:#c85a68;opacity:0;
+  animation:stampIn .7s cubic-bezier(.2,1.6,.4,1) .5s both;
+  font-size:.95rem;margin-bottom:34px;
+}
+@keyframes stampIn{
+  0%{opacity:0;transform:rotate(-7deg) scale(2.4)}
+  100%{opacity:.9;transform:rotate(-7deg) scale(1)}
+}
+.cover h1{
+  font-family:var(--print);font-weight:400;margin:0;line-height:.98;
+  font-size:clamp(2.6rem,13vw,3.8rem);letter-spacing:.04em;
+  background:linear-gradient(100deg,#7d8aa4 0%,#f4f8ff 25%,#9eacc6 50%,#ffffff 72%,#7d8aa4 100%);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;
+}
+.cover .sub{
+  font-family:var(--hand);font-size:1.55rem;line-height:1.25;color:#b8c4da;margin:26px 0 8px;max-width:20ch;
+  text-shadow:0 0 12px rgba(150,175,215,.6);
+}
+.cover .attr{font-family:var(--print-i);font-style:italic;color:#8d9bb5;font-size:1rem;margin:26px 0 0}
+.cover .attr b{display:block;font-family:var(--print);font-style:normal;font-weight:400;letter-spacing:.2em;text-transform:uppercase;color:#b8c4da;font-size:.95rem;margin-bottom:6px}
+.cover .swipe{
+  position:absolute;z-index:3;bottom:30px;left:0;right:0;text-align:center;
+  font-family:var(--scribble);font-size:1.5rem;color:#9fb0cf;animation:nudge 2.4s ease-in-out infinite;
+}
+@keyframes nudge{0%,100%{transform:translateX(0);opacity:.55}50%{transform:translateX(10px);opacity:1}}
+
+/* ---------- Entrada de contenido ---------- */
+.page.active .content > *{
+  animation:inkIn 1s ease both;
+  animation-delay:calc(var(--i,0) * 110ms + 420ms);
+}
+@keyframes inkIn{
+  from{opacity:0;transform:translate3d(0,8px,0)}
+  to{opacity:1;transform:none}
+}
+
+/* ---------- Niebla global ---------- */
+#mist{
+  position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:15;
+  opacity:.38;transition:opacity 1.2s ease;
+}
+body.on-cover #mist{opacity:1}
+#fog{
+  position:fixed;inset:0;pointer-events:none;z-index:16;opacity:0;will-change:opacity,transform;
+  background:radial-gradient(ellipse at 50% 60%, rgba(225,233,247,.75), rgba(160,178,208,.25) 55%, transparent 80%);
+}
+#fog.go{animation:fogpass 1.1s ease-out}
+@keyframes fogpass{
+  0%{opacity:0;transform:translateX(-7%) scale(1.08)}
+  35%{opacity:1}
+  100%{opacity:0;transform:translateX(7%) scale(1)}
+}
+
+/* ---------- Navegación ---------- */
+.nav{
+  position:fixed;left:0;right:0;bottom:0;z-index:30;
+  display:flex;align-items:center;justify-content:center;gap:22px;
+  padding:12px 16px calc(12px + env(safe-area-inset-bottom));
+  background:linear-gradient(to top,rgba(5,7,11,.92),rgba(5,7,11,0));
+}
+.nav button{
+  width:50px;height:50px;border-radius:50%;
+  border:1px solid rgba(190,205,230,.45);background:rgba(20,26,40,.92);
+  color:#dbe4f3;font-size:1.5rem;line-height:1;cursor:pointer;
+  box-shadow:0 0 12px rgba(150,175,215,.25);
+  transition:opacity .3s,transform .15s;
+  font-family:Georgia,serif;
+}
+.nav button:active{transform:scale(.92)}
+.nav button:disabled{opacity:.22;cursor:default;box-shadow:none}
+.nav .count{
+  min-width:110px;text-align:center;font-family:var(--print-i);color:#aab8d2;font-size:.98rem;letter-spacing:.1em;
+}
+
+@media (min-width:700px){
+  .book{margin-bottom:96px}
+}
+@media (prefers-reduced-motion:reduce){
+  .page::before,.page::after,.cover .swipe{animation:none}
+  .page{transition:opacity .3s}
+  .page.turned{transition:opacity .3s;transform:none}
+  .page.active .content > *{animation-duration:.01s;animation-delay:0s}
+}
+</style>
+</head>
+<body class="on-cover">
+
+<main class="stage">
+  <div class="book" id="book">
+
+    <!-- PORTADA -->
+    <section class="page cover">
+      <div class="frame"></div>
+      <div class="scroll"><div class="content" style="display:flex;flex-direction:column;align-items:center">
+        <div class="stamp">Confiscado · Clase XXXXX</div>
+        <h1>Coreleash<br>Draught</h1>
+        <p class="sub">Sobre la sujeción de los núcleos mágicos por vía de poción</p>
+        <p class="attr"><b>Atribuido a la Casa Avery</b>Ensayo de laboratorio · Copia incompleta</p>
+      </div></div>
+      <div class="swipe">desliza o toca ›</div>
+    </section>
+
+    <!-- 1 · PROCEDENCIA -->
+    <section class="page">
+      <div class="scroll"><div class="content">
+        <span class="kicker">Procedencia</span>
+        <h2>Origen del ensayo</h2>
+        <p>Los Avery, linaje de sangre pura con generaciones de sirvientes del poder, no necesitaron nunca de la varita ajena para dominar a otros. Su vocación fue siempre más sutil: comprender el <em>recipiente</em> antes que el contenido.</p>
+        <p>Este ensayo nació en el laboratorio privado de la familia, un ala sellada de su propiedad. Era un informe interno, redactado para ser leído por sus propios herederos y por el círculo más estrecho de Voldemort. Nunca fue sometido a ningún Ministerio ni a ninguna academia.</p>
+      </div></div>
+      <div class="folio"></div>
+    </section>
+
+    <!-- 2 · FRAGMENTO I (a) -->
+    <section class="page">
+      <div class="scroll"><div class="content">
+        <span class="kicker">Fragmento I</span>
+        <h2>La premisa del núcleo mágico</h2>
+        <p>Todo mago porta en el pecho un núcleo: la fuente de donde mana su magia. Los eruditos clásicos lo consideraban inviolable, un rasgo de nacimiento como la sangre o el timbre de la voz. Los Avery sostenían lo contrario.</p>
+        <div class="quote">
+          <p>El núcleo no es un muro, es una corriente. Y toda corriente puede ser encauzada.</p>
+          <cite>— Manuscrito original, folio 2</cite>
+        </div>
+      </div></div>
+      <div class="folio"></div>
+    </section>
+
+    <!-- 3 · FRAGMENTO I (b) -->
+    <section class="page">
+      <div class="scroll"><div class="content">
+        <span class="kicker">Fragmento I · cont.</span>
+        <h2>El Coreleash Draught</h2>
+        <p>El Coreleash Draught es el resultado de ese razonamiento. Se trata de una poción de aspecto lechoso y reflejos de plata que, al ser ingerida, se disuelve en el cuerpo como un vapor frío y se adhiere al núcleo.</p>
+        <p>Una vez adherida, no lo debilita: lo <em>vuelve dócil</em>. La magia sigue fluyendo, pero deja de obedecer solo a su dueño.</p>
+        <p class="margin-note">Entre los círculos que la conocieron circulaba un apodo: «la bruma», por el vapor plateado del caldero en la última cocción.</p>
+      </div></div>
+      <div class="folio"></div>
+    </section>
+
+    <!-- 4 · FRAGMENTO II (a) -->
+    <section class="page">
+      <div class="scroll"><div class="content">
+        <span class="kicker">Fragmento II</span>
+        <h2>Un tratamiento, no un hechizo</h2>
+        <p>El Coreleash no actúa de inmediato ni con una sola toma. Es un tratamiento repetido: requiere múltiples aplicaciones a lo largo del tiempo, y la cantidad necesaria varía según el mago.</p>
+        <p>Los autores observaron que la resistencia del núcleo depende del talento, la edad y la fuerza de voluntad del sujeto: un mago poco dotado podía ceder antes y uno excepcional exigir muchas más aplicaciones. Quien busque efectos rápidos fracasará, porque el núcleo se resiste a la intrusión.</p>
+      </div></div>
+      <div class="folio"></div>
+    </section>
+
+    <!-- 5 · FRAGMENTO II (b) -->
+    <section class="page">
+      <div class="scroll"><div class="content">
+        <span class="kicker">Fragmento II · cont.</span>
+        <h2>Las tres etapas</h2>
+        <p>El proceso atraviesa tres etapas, sin plazos fijos:</p>
+        <div class="stage-item"><span class="num">I</span>
+          <p><strong>Asentamiento.</strong> Las primeras aplicaciones no producen efectos visibles. El sujeto no nota nada, salvo un leve frío en el esternón y sueños de niebla.</p></div>
+        <div class="stage-item"><span class="num">II</span>
+          <p><strong>Sujeción.</strong> Con la repetición, el núcleo comienza a ceder. El sujeto aún lanza hechizos, pero con un retraso apenas perceptible y una extraña sensación de ser <em>observado desde dentro</em>.</p></div>
+        <div class="stage-item"><span class="num">III</span>
+          <p><strong>Obediencia.</strong> Cuando la poción queda anclada, quien la administra puede, mediante un vínculo ritual, modular la intensidad de la magia del sujeto: amplificarla, apagarla o redirigirla.</p></div>
+        <p class="margin-note">Interrumpir el tratamiento a mitad de camino es peor que no empezarlo.</p>
+      </div></div>
+      <div class="folio"></div>
+    </section>
+
+    <!-- 6 · FRAGMENTO III (a) -->
+    <section class="page">
+      <div class="scroll"><div class="content">
+        <span class="kicker">Fragmento III</span>
+        <h2>Lo que el Coreleash le hace al cuerpo</h2>
+        <p>Esta sección está escrita en una letra más apretada y con numerosas correcciones al margen. Los efectos observados en los sujetos de prueba, aun en los casos «exitosos», incluyen:</p>
+        <ul class="effects">
+          <li>Pérdida progresiva del color en el iris, que adopta un tono plateado y opaco.</li>
+          <li>Frío persistente en las extremidades y manos que tiemblan al intentar conjurar.</li>
+          <li>Insomnio seguido de sueños compartidos, en los que varios sujetos describen el mismo paisaje de niebla.</li>
+        </ul>
+      </div></div>
+      <div class="folio"></div>
+    </section>
+
+    <!-- 7 · FRAGMENTO III (b) -->
+    <section class="page">
+      <div class="scroll"><div class="content">
+        <span class="kicker">Fragmento III · cont.</span>
+        <h2>Efectos colaterales</h2>
+        <ul class="effects">
+          <li>Embotamiento de las emociones, con una apatía creciente que los autores llaman «docilidad deseable».</li>
+          <li>Fallas de memoria, sobre todo de los recuerdos ligados a su primera varita y a su primer hechizo.</li>
+          <li>En dosis prolongadas, hemorragias nasales plateadas y episodios de magia accidental incontrolable.</li>
+        </ul>
+      </div></div>
+      <div class="folio"></div>
+    </section>
+
+    <!-- 8 · FOLIO 14 -->
+    <section class="page">
+      <div class="scroll"><div class="content">
+        <span class="kicker">Folio 14</span>
+        <h2>Tachaduras del autor</h2>
+        <div class="quote">
+          <p>Dos de los once sujetos dejaron de responder a toda estimulación. Sus núcleos seguían activos. Sus mentes, no.</p>
+          <cite>— Manuscrito original, folio 14</cite>
+        </div>
+        <p class="hint">Toca el fragmento tachado para revelar la anotación oculta.</p>
+        <button class="redacted" id="redacted" aria-expanded="false">
+          <span class="ink" aria-hidden="true"></span>
+          <span class="reveal-text">«El sujeto sigue conjurando. Pero ya no sabe por qué.»</span>
+        </button>
+        <p class="margin-note">Varias líneas aparecen cubiertas con tinta espesa.</p>
+      </div></div>
+      <div class="folio"></div>
+    </section>
+
+    <!-- 9 · ADENDA -->
+    <section class="page">
+      <div class="scroll"><div class="content">
+        <span class="kicker">Adenda no autorizada</span>
+        <h2>Lo que los mortífagos querían de ella</h2>
+        <p>La copia que circuló entre los círculos oscuros incluye anotaciones de otra mano, con una ambición muy distinta a la académica de los Avery.</p>
+        <div class="quote">
+          <p>Un mago poderoso es un riesgo. Un mago poderoso con el núcleo sujeto es un arma. Imaginen un Auror que lance sus hechizos al servicio nuestro sin saberlo. Imaginen una escuela entera de magos brillantes que despierten un día y descubran que su magia ya no les pertenece.</p>
+          <cite>— Apéndice, mano distinta a la de los Avery</cite>
+        </div>
+      </div></div>
+      <div class="folio"></div>
+    </section>
+
+    <!-- 10 · USOS -->
+    <section class="page">
+      <div class="scroll"><div class="content">
+        <span class="kicker">Apéndice</span>
+        <h2>Usos propuestos</h2>
+        <ol class="uses">
+          <li><strong>Control de magos hostiles</strong> sin necesidad de Imperius, que puede detectarse y resistirse.</li>
+          <li><strong>Infiltración</strong>, administrando el Coreleash en secreto a funcionarios del Ministerio.</li>
+          <li><strong>Un ejército obediente</strong>, formado por magos cuyo poder fuera enteramente prestado.</li>
+        </ol>
+      </div></div>
+      <div class="folio"></div>
+    </section>
+
+    <!-- 11 · FINAL -->
+    <section class="page">
+      <div class="scroll"><div class="content">
+        <span class="kicker">Clasificación</span>
+        <h2>Por qué es Clase XXXXX</h2>
+        <p>Este apéndice es la razón por la que el ensayo fue clasificado como Clase XXXXX: confirma que el Coreleash no se quedó en la teoría.</p>
+        <div class="end">
+          <span class="stamp">Clase XXXXX</span>
+          <small>Fin de la copia incompleta</small>
+        </div>
+      </div></div>
+      <div class="folio"></div>
+    </section>
+
+  </div>
+</main>
+
+<canvas id="mist" aria-hidden="true"></canvas>
+<div id="fog" aria-hidden="true"></div>
+
+<nav class="nav" aria-label="Pasar páginas">
+  <button id="prev" aria-label="Página anterior">‹</button>
+  <div class="count" id="count" aria-live="polite">Portada</div>
+  <button id="next" aria-label="Página siguiente">›</button>
+</nav>
+
+<script>
+(function(){
+  'use strict';
+  var pages = Array.prototype.slice.call(document.querySelectorAll('.page'));
+  var total = pages.length;
+  var cur = 0;
+  var prevBtn = document.getElementById('prev');
+  var nextBtn = document.getElementById('next');
+  var countEl = document.getElementById('count');
+  var fog = document.getElementById('fog');
+  var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---------- preparar páginas ---------- */
+  pages.forEach(function(p, i){
+    p.style.zIndex = String(total - i);
+    var kids = p.querySelectorAll('.content > *');
+    for (var k = 0; k < kids.length; k++) kids[k].style.setProperty('--i', k);
+    var fo = p.querySelector('.folio');
+    if (fo) fo.textContent = '— ' + i + ' —';
+  });
+
+  /* ---------- ajustar el texto para que nunca haga falta scroll ---------- */
+  function fitPage(p){
+    if (p.classList.contains('cover')) return;
+    var sc = p.querySelector('.scroll');
+    var last = p.querySelector('.content').lastElementChild;
+    if (!sc || !last) return;
+    var f = 1;
+    p.style.setProperty('--fs', '1');
+    /* offsetTop no se ve afectado por las animaciones de entrada */
+    while (last.offsetTop + last.offsetHeight > sc.clientHeight - 38 && f > 0.58){
+      f -= 0.04;
+      p.style.setProperty('--fs', f.toFixed(2));
+    }
+  }
+  function fitAll(){ pages.forEach(fitPage); }
+  var rt;
+  window.addEventListener('resize', function(){
+    clearTimeout(rt); rt = setTimeout(fitAll, 120);
+  });
+  fitAll();
+  if (document.fonts && document.fonts.ready){ document.fonts.ready.then(fitAll); }
+  window.addEventListener('load', fitAll);
+
+  function render(){
+    pages.forEach(function(p, i){
+      p.classList.toggle('turned', i < cur);
+      p.classList.toggle('active', i === cur);
+      p.classList.toggle('far', Math.abs(i - cur) > 1);
+      p.setAttribute('aria-hidden', i === cur ? 'false' : 'true');
+      try { p.inert = (i !== cur); } catch(e){}
+    });
+    var s = pages[cur].querySelector('.scroll');
+    if (s) s.scrollTop = 0;
+    document.body.classList.toggle('on-cover', cur === 0);
+    prevBtn.disabled = cur === 0;
+    nextBtn.disabled = cur === total - 1;
+    countEl.textContent = cur === 0 ? 'Portada' : 'Folio ' + cur + ' / ' + (total - 1);
+  }
+
+  function pulseFog(){
+    if (reduced) return;
+    fog.classList.remove('go');
+    void fog.offsetWidth;
+    fog.classList.add('go');
+  }
+
+  function go(n){
+    if (n < 0 || n >= total || n === cur) return;
+    cur = n;
+    render();
+    pulseFog();
+    burst(7);
+  }
+
+  prevBtn.addEventListener('click', function(){ go(cur - 1); });
+  nextBtn.addEventListener('click', function(){ go(cur + 1); });
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'ArrowRight' || e.key === 'PageDown') go(cur + 1);
+    if (e.key === 'ArrowLeft'  || e.key === 'PageUp')   go(cur - 1);
+  });
+
+  /* ---------- deslizar ---------- */
+  var sx = 0, sy = 0, st = 0;
+  var book = document.getElementById('book');
+  book.addEventListener('touchstart', function(e){
+    var t = e.changedTouches[0]; sx = t.clientX; sy = t.clientY; st = Date.now();
+  }, {passive:true});
+  book.addEventListener('touchend', function(e){
+    var t = e.changedTouches[0];
+    var dx = t.clientX - sx, dy = t.clientY - sy;
+    if (Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy) * 1.6 && Date.now() - st < 900){
+      go(dx < 0 ? cur + 1 : cur - 1);
+    }
+  }, {passive:true});
+
+  /* ---------- fragmento tachado ---------- */
+  var red = document.getElementById('redacted');
+  red.addEventListener('click', function(){
+    var open = red.classList.toggle('open');
+    red.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (open) burst(6);
+  });
+
+  /* ---------- bruma plateada (canvas) ---------- */
+  var cv = document.getElementById('mist');
+  var ctx = cv.getContext('2d');
+  var W = 0, H = 0;
+  var sprite = document.createElement('canvas');
+  sprite.width = sprite.height = 64;
+  (function(){
+    var g = sprite.getContext('2d');
+    var grad = g.createRadialGradient(32,32,0,32,32,32);
+    grad.addColorStop(0,   'rgba(226,234,248,1)');
+    grad.addColorStop(.35, 'rgba(200,212,234,.55)');
+    grad.addColorStop(1,   'rgba(190,204,230,0)');
+    g.fillStyle = grad; g.fillRect(0,0,64,64);
+  })();
+
+  var parts = [];
+  var MAX = 34;
+  var SCALE = 0.4; /* la bruma es difusa: se dibuja a baja resolución */
+  function resize(){
+    W = window.innerWidth; H = window.innerHeight;
+    cv.width = Math.round(W * SCALE); cv.height = Math.round(H * SCALE);
+    ctx.setTransform(SCALE,0,0,SCALE,0,0);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  function spawn(big){
+    var r = (big ? 90 : 60) + Math.random() * (big ? 150 : 130);
+    return {
+      x: Math.random() * W,
+      y: H * (0.25 + Math.random() * 0.85),
+      r: r,
+      vx: (Math.random() - .5) * (big ? 1.4 : .35),
+      vy: -(.05 + Math.random() * (big ? .5 : .22)),
+      a: (big ? .35 : .22) + Math.random() * (big ? .3 : .22),
+      t: 0,
+      life: (big ? 240 : 420) + Math.random() * 360,
+      ph: Math.random() * 6.28,
+      sw: .15 + Math.random() * .35
+    };
+  }
+  var base = W < 600 ? 13 : 22;
+  for (var i = 0; i < base; i++){
+    var p = spawn(false); p.t = Math.random() * p.life; parts.push(p);
+  }
+  function burst(n){
+    if (reduced) return;
+    for (var i = 0; i < n && parts.length < MAX; i++) parts.push(spawn(true));
+  }
+
+  var running = true;
+  function frame(){
+    if (!running) return;
+    ctx.clearRect(0,0,W,H);
+    for (var i = parts.length - 1; i >= 0; i--){
+      var p = parts[i];
+      p.t++;
+      p.ph += .008;
+      p.x += p.vx + Math.sin(p.ph) * p.sw;
+      p.y += p.vy;
+      var k = p.t / p.life;
+      if (k >= 1){
+        if (parts.length > base){ parts.splice(i,1); continue; }
+        parts[i] = spawn(false); continue;
+      }
+      ctx.globalAlpha = p.a * Math.sin(Math.PI * k);
+      ctx.drawImage(sprite, p.x - p.r, p.y - p.r, p.r * 2, p.r * 2);
+    }
+    ctx.globalAlpha = 1;
+    requestAnimationFrame(frame);
+  }
+  if (reduced){
+    ctx.clearRect(0,0,W,H);
+    parts.forEach(function(p){
+      ctx.globalAlpha = p.a * .6;
+      ctx.drawImage(sprite, p.x - p.r, p.y - p.r, p.r * 2, p.r * 2);
+    });
+  } else {
+    requestAnimationFrame(frame);
+  }
+  document.addEventListener('visibilitychange', function(){
+    if (reduced) return;
+    if (document.hidden){ running = false; }
+    else if (!running){ running = true; requestAnimationFrame(frame); }
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
